@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
 import scrapy
-import time
-import json
-from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import CrawlSpider, Rule
 from BiliVideo.items import TypeItem,VideoItem
-class BilispiderSpider(CrawlSpider):
-    name = 'bilispider'
-    start_urls = ['https://bilibili.com']
-    rules = (
-        Rule(LinkExtractor(allow=['v/\w+/\w+','v/\w+/\w+/#/all/default/0/\d+/'],restrict_xpaths='//*[@id="primary_menu"]/ul/li/ul/li/a'), callback='parse_item',follow=True),
-        Rule(LinkExtractor(allow='ranking'),callback='parse_type_item')
-    )
 
-    def parse_type_item(self, response):
+
+class BilispiderSpider(scrapy.Spider):
+    name = 'bilispider'
+    start_urls = ['https://bilibili.com/ranking']
+    def parse(self, response):
         types=response.xpath('//*[@id="primary_menu"]/ul/li/a/div[2]/text()').extract()
         subtypes=[]
         suburls=[]
@@ -26,10 +19,16 @@ class BilispiderSpider(CrawlSpider):
                 item['type']=type
                 item['subtype']=j
                 item['subtype_url']=k.replace('//','')
-                yield item
-
+                yield scrapy.http.Request(url="https://"+item['subtype_url'],callback=self.parse_item)
+        # self.request_url(suburls)
+    def request_url(self,urls):
+        for url in urls:
+            if type(url) is list:
+                self.request_url(url)
+            yield scrapy.http.Request(url=url,callback=self.parse_item)
+            # print(url)
     def parse_item(self, response):
-
+        print(response.text)
         video_urls=response.xpath('//*[@id="videolist_box"]/div[2]/ul/li/div/div[2]/a/@href').extract()
         titles=response.xpath('//*[@id="videolist_box"]/div[2]/ul/li/div/div[2]/a/text()').extract()
         watched_times=response.xpath('//*[@id="videolist_box"]/div[2]/ul/li/div/div[2]/div[2]/span[1]/span/text()').extract()
