@@ -4,7 +4,7 @@
 #
 # See documentation in:
 # https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-
+import time
 from scrapy import signals
 
 from selenium import webdriver
@@ -70,13 +70,14 @@ class BilivideoDownloaderMiddleware(object):
 
     def __init__(self,service_args=[]):
         self.timeout=20
-        self.browser=webdriver.PhantomJS(service_args=service_args)
+        # self.browser=webdriver.PhantomJS(service_args=service_args)
+        self.browser=webdriver.Chrome()
         self.browser.set_page_load_timeout(self.timeout)
         self.wait=WebDriverWait(self.browser,self.timeout)
         self.logger=logging.getLogger(__name__)
 
     def __del__(self):
-        self.browser.close()
+        self.browser.quit()
 
     def process_request(self,request,spider):
         self.logger.debug("+++++")
@@ -88,11 +89,12 @@ class BilivideoDownloaderMiddleware(object):
                                'https://www.bilibili.com','http://www.bilibili.com',
                                'https://bilibili.com/ranking','http://bilibili.com/ranking',
                                'https://www.bilibili.com/ranking', 'http://www.bilibili.com/ranking',]:
-
-
                 next=self.wait.until(EC.element_to_be_clickable(
                     (By.CSS_SELECTOR,'#videolist_box > div.vd-list-cnt > div.pager.pagination'+
                                      '> ul > li.page-item.next > button')))
+                # videolist_box > div.vd-list-cnt > div.pager.pagination > ul > li.page-item.next > button
+                # videolist_box > div.vd-list-cnt > div.pager.pagination > ul > li.page-item.next > button
+                time.sleep(1)
                 next.click()
             return HtmlResponse(url=request.url, body=self.browser.page_source,
                                 request=request, encoding='utf-8', status=200)

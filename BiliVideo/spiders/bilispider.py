@@ -19,16 +19,18 @@ class BilispiderSpider(scrapy.Spider):
                 item['type']=type
                 item['subtype']=j
                 item['subtype_url']=k.replace('//','')
-                yield scrapy.http.Request(url="https://"+item['subtype_url'],callback=self.parse_item)
+                yield item
+                yield scrapy.http.Request(url='https://'+item['subtype_url'],callback=self.parse_item)
         # self.request_url(suburls)
+
     def request_url(self,urls):
         for url in urls:
             if type(url) is list:
                 self.request_url(url)
-            yield scrapy.http.Request(url=url,callback=self.parse_item)
-            # print(url)
+            else:
+                yield scrapy.http.Request(url="https:"+url,callback=self.parse_item)
+                # print(url)
     def parse_item(self, response):
-        print(response.text)
         video_urls=response.xpath('//*[@id="videolist_box"]/div[2]/ul/li/div/div[2]/a/@href').extract()
         titles=response.xpath('//*[@id="videolist_box"]/div[2]/ul/li/div/div[2]/a/text()').extract()
         watched_times=response.xpath('//*[@id="videolist_box"]/div[2]/ul/li/div/div[2]/div[2]/span[1]/span/text()').extract()
